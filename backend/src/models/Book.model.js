@@ -60,7 +60,7 @@ const bookSchema = new mongoose.Schema(
             default: []
         },
     },
-    { timestamps: true }
+     { timestamps: true, toJSON: { virtuals: true } }
 );
 
 // it will be null for production books and will be set when a book is published

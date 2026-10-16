@@ -7,6 +7,7 @@ import { config } from "./config/config.js";
 
 import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 import authRoutes from "./routes/auth.routes.js";
+import bookRoutes from "./routes/book.routes.js";
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(morgan("dev"));
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/books", bookRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
