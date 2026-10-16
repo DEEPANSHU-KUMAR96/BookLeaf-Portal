@@ -9,6 +9,7 @@ import { notFound, errorHandler } from "./middlewares/errorHandler.js";
 import authRoutes from "./routes/auth.routes.js";
 import bookRoutes from "./routes/book.routes.js";
 import ticketRoutes from "./routes/ticket.routes.js";
+import adminTicketRoutes from "./routes/adminTicket.routes.js";
 
 const app = express();
 
@@ -23,6 +24,8 @@ app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/tickets", ticketRoutes);
+
+app.use("/api/admin/tickets", adminTicketRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
