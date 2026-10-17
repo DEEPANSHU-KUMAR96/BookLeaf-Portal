@@ -4,6 +4,7 @@ import AppShell from "../components/AppShell";
 import Spinner from "../components/Spinner";
 import LoginPage from "../features/auth/pages/LoginPage";
 import { useAuth } from "../features/auth/hook/useAuth";
+import MyBooksPage from "../features/books/pages/MyBooksPage";
 
 /** "/" sends everyone to the right place for their role. */
 function HomeRedirect() {
@@ -27,12 +28,30 @@ export const router = createBrowserRouter([
     },
     {
         element: <ProtectedRoute role="author" />,
-        children: [{
-             element: <AppShell />,
-             children: [{ 
-                path: "/author",
-             element: <Placeholder title="Author dashboard" /> 
-            }] }],
+        children: [
+            {
+                element: <AppShell />,
+                children: [
+                    {
+                        path: "/author",
+                        element: <Navigate to="/author/books" replace />
+                    },
+                    {
+
+                        path: "/author/books",
+                        element: <MyBooksPage />
+                    },
+                    {
+                        path: "/author/tickets/new",
+                        element: <Placeholder title="Submit a query" />
+                    },
+                    {
+                        path: "/author/tickets",
+                        element: <Placeholder title="My tickets" />
+                    },
+                ],
+            },
+        ],
     },
     {
         element: <ProtectedRoute role="admin" />,

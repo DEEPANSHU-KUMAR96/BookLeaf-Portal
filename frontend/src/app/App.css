@@ -1,10 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --font-serif: "Playfair Display", Georgia, serif;
+  --font-serif: "Newsreader", "Playfair Display", Georgia, serif;
+  --font-serif-title: "Newsreader", Georgia, serif;
   --font-display: "Cinzel", serif;
   --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 
+  --color-leaf-50: #f0fdf4;
+  --color-leaf-100: #dcfce7;
+  --color-leaf-500: #15803d;
+  --color-leaf-600: #166534;
+  --color-leaf-700: #14532d;
+  --color-leaf-800: #064e3b;
+  --color-leaf-900: #022c22;
   --color-leaf-light: #1FB26C;
   --color-leaf: #0E7052;
   --color-leaf-dark: #0A553D;
@@ -17,14 +25,31 @@
   --color-blush-400: #DFBFC8;
 }
 
+.font-serif-title {
+  font-family: 'Newsreader', 'Playfair Display', Georgia, serif;
+  letter-spacing: -0.015em;
+}
+
 .bg-pinkish-white-glow {
   background: radial-gradient(circle at 50% 0%, rgba(254, 238, 242, 0.85) 0%, rgba(250, 245, 246, 0.5) 50%, rgba(248, 241, 243, 0.9) 100%);
 }
 
+.shadow-subtle {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+}
+
 .shadow-card {
-  box-shadow: 0 20px 45px -12px rgba(180, 140, 155, 0.18), 0 4px 16px -2px rgba(180, 140, 155, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02);
+}
+
+.shadow-card-hover {
+  box-shadow: 0 10px 25px -4px rgba(15, 23, 42, 0.08), 0 4px 10px -2px rgba(15, 23, 42, 0.03);
 }
 
 .shadow-btn {
   box-shadow: 0 10px 24px -6px rgba(14, 112, 82, 0.35);
+}
+
+.shadow-glow-emerald {
+  box-shadow: 0 0 20px -3px rgba(22, 101, 52, 0.25);
 }
