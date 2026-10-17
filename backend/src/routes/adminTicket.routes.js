@@ -9,6 +9,7 @@ import {
     addNoteSchema,
     sendResponseSchema,
 } from "../validators/adminTicket.validator.js";
+import { aiLimiter } from "../middlewares/rateLimit.js";
 
 const router = Router();
 
@@ -22,7 +23,7 @@ router.post("/:id/notes", validate(addNoteSchema), addNote);
 router.post("/:id/responses", validate(sendResponseSchema), respond);
 
 
-router.post("/:id/ai-draft", aiDraft); // ?force=true regenerates
-router.post("/:id/ai-classify", aiClassify);
+router.post("/:id/ai-draft", aiLimiter, aiDraft); // ?force=true regenerates
+router.post("/:id/ai-classify", aiLimiter, aiClassify);
 
 export default router;

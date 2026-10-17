@@ -4,6 +4,7 @@ import { authenticate, authorize } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { ROLES } from "../models/user.model.js";
 import { createTicketSchema, listTicketsQuerySchema } from "../validators/ticket.validator.js";
+import { createTicketLimiter } from "../middlewares/rateLimit.js";
 
 const router = Router();
 
@@ -14,6 +15,7 @@ router.post("/", authorize(ROLES.AUTHOR), validate(createTicketSchema), create);
 router.get(
     "/",
     authorize(ROLES.AUTHOR),
+    createTicketLimiter,
     validate(listTicketsQuerySchema, "query"),
     listMine
 );
