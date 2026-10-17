@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-display: "Cinzel", serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --color-leaf-light: #1FB26C;
+  --color-leaf: #0E7052;
+  --color-leaf-dark: #0A553D;
+  --color-leaf-deep: #063B2B;
+
+  --color-blush-50: #FDFBFC;
+  --color-blush-100: #FAF5F6;
+  --color-blush-200: #F5EAED;
+  --color-blush-300: #EEDCE1;
+  --color-blush-400: #DFBFC8;
+}
+
+.bg-pinkish-white-glow {
+  background: radial-gradient(circle at 50% 0%, rgba(254, 238, 242, 0.85) 0%, rgba(250, 245, 246, 0.5) 50%, rgba(248, 241, 243, 0.9) 100%);
+}
+
+.shadow-card {
+  box-shadow: 0 20px 45px -12px rgba(180, 140, 155, 0.18), 0 4px 16px -2px rgba(180, 140, 155, 0.08);
+}
+
+.shadow-btn {
+  box-shadow: 0 10px 24px -6px rgba(14, 112, 82, 0.35);
+}

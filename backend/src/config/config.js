@@ -38,6 +38,11 @@ if (!process.env.REFRESH_TOKEN_EXPIRES_DAYS) {
     throw new Error("REFRESH_TOKEN_EXPIRES_DAYS is not defined");
 }
 
+const refreshTokenExpiresDays = Number(process.env.REFRESH_TOKEN_EXPIRES_DAYS);
+if (!Number.isFinite(refreshTokenExpiresDays) || refreshTokenExpiresDays <= 0) {
+    throw new Error("REFRESH_TOKEN_EXPIRES_DAYS must be a positive number of days");
+}
+
 
 export const config = {
     PORT: process.env.PORT || 8000,
@@ -45,7 +50,7 @@ export const config = {
     JWT_SECRET: process.env.JWT_SECRET,
     JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
     REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
-    REFRESH_TOKEN_EXPIRES_DAYS: process.env.REFRESH_TOKEN_EXPIRES_DAYS || 30,
+    REFRESH_TOKEN_EXPIRES_DAYS: refreshTokenExpiresDays,
     GROQ_API_KEY: process.env.GROQ_API_KEY,
     GROQ_CLASSIFY_MODEL: process.env.GROQ_CLASSIFY_MODEL || "llama-3.1-8b-instant",
     GROQ_DRAFT_MODEL: process.env.GROQ_DRAFT_MODEL || "llama-3.3-70b-versatile",
