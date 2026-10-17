@@ -119,6 +119,7 @@ const ticketSchema = new Schema(
                 enum: ["pending", "done", "failed"],
                 default: "pending"
             },
+            reason: String, // short explanation of the AI's category/priority choice
             draft: {
                 type: String,
                 default: null

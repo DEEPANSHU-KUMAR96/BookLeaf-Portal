@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { list, getOne, addNote, respond, update } from "../controllers/adminTicket.controller.js";
+import { list, getOne, addNote, respond, update, aiDraft, aiClassify } from "../controllers/adminTicket.controller.js";
 import { authenticate, authorize } from "../middlewares/auth.middleware.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { ROLES } from "../models/user.model.js";
@@ -20,5 +20,9 @@ router.get("/:id", getOne);
 router.patch("/:id", validate(updateTicketSchema), update);
 router.post("/:id/notes", validate(addNoteSchema), addNote);
 router.post("/:id/responses", validate(sendResponseSchema), respond);
+
+
+router.post("/:id/ai-draft", aiDraft); // ?force=true regenerates
+router.post("/:id/ai-classify", aiClassify);
 
 export default router;

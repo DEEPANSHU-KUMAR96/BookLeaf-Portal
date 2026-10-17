@@ -1,6 +1,8 @@
-import  Ticket  from "../models/ticket.model.js";
-import  Book  from "../models/Book.model.js";
+import Ticket from "../models/ticket.model.js";
+import { processNewTicket } from "./ai/ticketAi.service.js";
+import Book from "../models/Book.model.js";
 import { ApiError } from "../utils/ApiError.js";
+
 
 /**
  * What an author is allowed to see. Whitelisting fields (instead of deleting
@@ -34,8 +36,8 @@ export async function createTicket(user, input) {
     // The author can only attach a ticket to one of their own books
     if (input.bookId) {
         const owned = await Book.exists({
-             _id: input.bookId, author: user.authorId
-             });
+            _id: input.bookId, author: user.authorId
+        });
         if (!owned) {
             throw ApiError.badRequest("Selected book was not found in your account")
         };
@@ -50,7 +52,9 @@ export async function createTicket(user, input) {
         // Step 7: AI classification + priority will be triggered from here.
         // The ticket is saved first so it is never lost if the AI provider is down.
     });
-
+    // Fire and forget: the author gets their response immediately while the AI works
+    // in the background. processNewTicket never throws, so nothing is left unhandled.
+    void processNewTicket(ticket._id);
     await ticket.populate("book", BOOK_FIELDS);
     return toAuthorView(ticket);
 }
