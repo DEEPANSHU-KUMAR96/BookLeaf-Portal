@@ -2,6 +2,7 @@ import Ticket from "../models/ticket.model.js";
 import { processNewTicket } from "./ai/ticketAi.service.js";
 import Book from "../models/Book.model.js";
 import { ApiError } from "../utils/ApiError.js";
+import { publish, ADMINS_ROOM } from "../services/realtime.service.js";
 
 
 /**
@@ -55,6 +56,8 @@ export async function createTicket(user, input) {
     // Fire and forget: the author gets their response immediately while the AI works
     // in the background. processNewTicket never throws, so nothing is left unhandled.
     void processNewTicket(ticket._id);
+    // Admins see the new ticket in their queue immediately
+    publish(ADMINS_ROOM, "ticket.created", { ticketId: ticket._id, subject: ticket.subject });
     await ticket.populate("book", BOOK_FIELDS);
     return toAuthorView(ticket);
 }

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Ticket, { PRIORITIES } from "../models/ticket.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { escapeRegex } from "../utils/escapeRegex.js";
+import { publish, ADMINS_ROOM, authorRoom } from "./realtime.service.js";
 
 const UNRESOLVED = ["Open", "In Progress"];
 const OVERDUE_HOURS = 48; // matches the 48-hour resolution promise in our responses
@@ -110,18 +111,29 @@ export async function updateTicket(admin, id, input) {
     const set = {};
     if (input.status) set.status = input.status;
     // An admin override is recorded so the AI never overwrites it later
-    if (input.category) Object.assign(set, {
-         category: input.category, categorySource: "admin"
-         });
-    if (input.priority) Object.assign(set, { 
-        priority: input.priority, prioritySource: "admin"
-     });
-    if ("assignedTo" in input) set.assignedTo = input.assignedTo === "me" ? admin.id : null;
+    if (input.category) {
+        Object.assign(set, { category: input.category, categorySource: "admin" });
+    }
+    if (input.priority) {
+        Object.assign(set, { priority: input.priority, prioritySource: "admin" });
+    }
+    if ("assignedTo" in input) {
+        set.assignedTo = input.assignedTo === "me" ? admin.id : null;
+    }
 
-    const updated = await Ticket.findByIdAndUpdate(id, { $set: set }, { runValidators: true });
-    if (!updated) {
-        throw ApiError.notFound("Ticket not found")
-    };
+    // Returns the document as it was BEFORE the update, so we can detect a status change
+    const before = await Ticket.findByIdAndUpdate(id, { $set: set }, { runValidators: true });
+    if (!before) throw ApiError.notFound("Ticket not found");
+
+    // Other admins viewing the queue see the change immediately
+    publish(ADMINS_ROOM, "ticket.updated", { ticketId: id, reason: "updated" });
+
+    // Authors only care about status. Priority, category and assignment stay private,
+    // so we notify the author only when the status actually changed.
+    if (input.status && input.status !== before.status) {
+        publish(authorRoom(before.author), "ticket.updated", { ticketId: id, status: input.status });
+    }
+
     return getTicket(id);
 }
 
@@ -129,6 +141,7 @@ export async function addNote(admin, id, text) {
     const updated = await Ticket.findByIdAndUpdate(id, {
         $push: { internalNotes: { admin: admin.id, text } }, // never exposed to authors
     });
+    publish(ADMINS_ROOM, "ticket.updated", { ticketId: id, reason: "note" });
     if (!updated) {
         throw ApiError.notFound("Ticket not found")
 
@@ -158,6 +171,8 @@ export async function addResponse(admin, id, { message, aiAssisted }) {
     if (ticket.status === "Open") ticket.status = "In Progress";
     if (!ticket.assignedTo) ticket.assignedTo = admin.id;
     await ticket.save();
+    publish(authorRoom(ticket.author), "ticket.response", { ticketId: id, status: ticket.status });
+    publish(ADMINS_ROOM, "ticket.updated", { ticketId: id, reason: "response" });
 
     // Step 8: emit a real-time event here so the author sees the reply instantly.
     return getTicket(id);

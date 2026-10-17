@@ -10,6 +10,7 @@ import authRoutes from "./routes/auth.routes.js";
 import bookRoutes from "./routes/book.routes.js";
 import ticketRoutes from "./routes/ticket.routes.js";
 import adminTicketRoutes from "./routes/adminTicket.routes.js";
+import eventsRoutes from "./routes/events.routes.js";
 
 const app = express();
 
@@ -26,6 +27,8 @@ app.use("/api/books", bookRoutes);
 app.use("/api/tickets", ticketRoutes);
 
 app.use("/api/admin/tickets", adminTicketRoutes);
+
+app.use("/api/events", eventsRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

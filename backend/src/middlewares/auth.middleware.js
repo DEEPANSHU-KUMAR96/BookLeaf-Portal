@@ -11,7 +11,7 @@ export function authenticate(req, res, next) {
 
     try {
         const payload = jwt.verify(header.slice(7), config.JWT_SECRET);
-        req.user = { id: payload.sub, role: payload.role, authorId: payload.author };
+        req.user = { id: payload.sub, role: payload.role, authorId: payload.author, exp: payload.exp };
         next();
     } catch (err) {
         // Frontend uses this exact message to know when to call /auth/refresh

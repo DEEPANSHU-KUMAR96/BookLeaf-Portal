@@ -5,6 +5,7 @@ import { ApiError } from "../../utils/ApiError.js";
 import { classifyTicket } from "./classifier.service.js";
 import { draftResponse } from "./drafter.service.js";
 import { AiUnavailableError } from "./groq.client.js";
+import { publish, ADMINS_ROOM } from "../realtime.service.js";
 
 
 /**
@@ -40,13 +41,17 @@ export async function processNewTicket(ticketId) {
             { _id: ticketId },
             { "ai.status": "done", "ai.reason": result.reason, "ai.error": null }
         );
+
+        publish(ADMINS_ROOM, "ticket.updated", { ticketId, reason: "ai_classified" });
     } catch (err) {
         console.error(`[ai] classification failed for ticket ${ticketId}:`, err.message);
+
         try {
             await Ticket.updateOne(
                 { _id: ticketId },
                 { "ai.status": "failed", "ai.error": err.message }
             );
+            publish(ADMINS_ROOM, "ticket.updated", { ticketId, reason: "ai_failed" });
         } catch (recordError) {
             console.error(
                 `[ai] could not record classification failure for ticket ${ticketId}:`,
