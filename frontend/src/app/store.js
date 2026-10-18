@@ -2,13 +2,14 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import authReducer, { sessionExpired } from "../features/auth/state/authSlice";
 import booksReducer from "../features/books/state/booksSlice";
 import ticketsReducer from "../features/tickets/state/ticketsSlice";
+import adminReducer from "../features/admin/state/adminSlice";
 import { setAuthFailureHandler } from "../services/api";
 
 const appReducer = combineReducers({
   auth: authReducer,
   books: booksReducer,
   tickets: ticketsReducer,
-  // books, tickets and admin slices are added in the next steps
+  admin: adminReducer,
 });
 
 /**

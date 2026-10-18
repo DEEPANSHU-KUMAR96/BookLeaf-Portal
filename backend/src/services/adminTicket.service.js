@@ -170,6 +170,10 @@ export async function addResponse(admin, id, { message, aiAssisted }) {
     // Sensible defaults: replying means work has started and someone owns the ticket
     if (ticket.status === "Open") ticket.status = "In Progress";
     if (!ticket.assignedTo) ticket.assignedTo = admin.id;
+    if (ticket.ai?.status === "failed") {
+        ticket.ai.status = "done";
+        ticket.ai.error = null;
+    }
     await ticket.save();
     publish(authorRoom(ticket.author), "ticket.response", { ticketId: id, status: ticket.status });
     publish(ADMINS_ROOM, "ticket.updated", { ticketId: id, reason: "response" });

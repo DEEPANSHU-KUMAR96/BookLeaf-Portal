@@ -99,24 +99,24 @@ export default function AppShell() {
     <div className="min-h-screen flex flex-col font-sans bg-[#FBFBFB] text-slate-800 antialiased selection:bg-emerald-100 selection:text-emerald-900">
       {/* Top Navigation Bar */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-subtle">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-18 py-3">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 sm:h-18 py-2 sm:py-3">
             {/* Logo & Desktop Nav Links */}
-            <div className="flex items-center space-x-8">
-              <Link to="/" className="flex items-center gap-2.5 group">
-                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-[#14532d] to-[#022c22] flex items-center justify-center text-white shadow-md shadow-emerald-950/10 group-hover:scale-105 transition-transform duration-200">
-                  <svg className="w-5 h-5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex items-center space-x-3 sm:space-x-8 min-w-0">
+              <Link to="/" className="flex items-center gap-2 sm:gap-2.5 group shrink-0">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-linear-to-br from-[#14532d] to-[#022c22] flex items-center justify-center text-white shadow-md shadow-emerald-950/10 group-hover:scale-105 transition-transform duration-200">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xl font-bold tracking-tight text-slate-900 flex items-center">
-                    BookLeaf{" "}
-                    <span className="ml-1.5 text-xs font-semibold uppercase tracking-wider text-[#14532d] bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/70">
+                  <span className="text-base sm:text-xl font-bold tracking-tight text-slate-900 flex items-center">
+                    BookLeaf
+                    <span className="ml-1 sm:ml-1.5 text-[9px] sm:text-xs font-semibold uppercase tracking-wider text-[#14532d] bg-emerald-50 px-1.5 sm:px-2 py-0.5 rounded-full border border-emerald-200/70">
                       {user?.role === "admin" ? "Admin" : "Author"}
                     </span>
                   </span>
-                  <span className="text-[10px] text-slate-400 font-medium tracking-wider uppercase -mt-0.5">
+                  <span className="hidden sm:block text-[10px] text-slate-400 font-medium tracking-wider uppercase -mt-0.5">
                     Creator Studio
                   </span>
                 </div>
@@ -134,13 +134,13 @@ export default function AppShell() {
             </div>
 
             {/* Author Profile & Quick Actions */}
-            <div className="flex items-center space-x-3 sm:space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
               {/* Notification Bell */}
               <div className="relative" ref={bellRef}>
                 <button
                   type="button"
                   onClick={() => setNotificationOpen(!notificationOpen)}
-                  className="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
                   title="Notifications"
                   aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
                 >
@@ -155,7 +155,7 @@ export default function AppShell() {
                 </button>
 
                 {notificationOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-card border border-slate-200 z-50 overflow-hidden">
+                  <div className="fixed inset-x-3 top-18 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 bg-white rounded-2xl shadow-card border border-slate-200 z-50 overflow-hidden">
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
                       <span className="text-sm font-semibold text-slate-800">Notifications</span>
@@ -242,17 +242,17 @@ export default function AppShell() {
                 )}
               </div>
 
-              <div className="h-6 w-px bg-slate-200 hidden sm:block"></div>
+              <div className="h-5 w-px bg-slate-200 hidden sm:block"></div>
 
-              {/* Author User Card */}
-              <div className="flex items-center space-x-3 pl-1">
+              {/* Author User Card & Logout */}
+              <div className="flex items-center gap-1.5 sm:gap-3">
                 <div className="relative">
-                  <div className="w-9 h-9 rounded-full bg-linear-to-tr from-amber-200 via-rose-200 to-teal-200 p-0.5 ring-1 ring-slate-200 shadow-xs">
+                  <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-linear-to-tr from-amber-200 via-rose-200 to-teal-200 p-0.5 ring-1 ring-slate-200 shadow-xs">
                     <div className="w-full h-full bg-white rounded-full flex items-center justify-center font-bold text-xs text-[#064e3b]">
                       {initials}
                     </div>
                   </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
                 </div>
                 <div className="hidden lg:flex flex-col text-left">
                   <span className="text-sm font-semibold text-slate-900 leading-none">{user?.name}</span>
@@ -261,14 +261,14 @@ export default function AppShell() {
                   </span>
                 </div>
 
-                {/* Sleek Log Out Button */}
+                {/* Sleek Log Out Button (icon on mobile, icon+label on sm+) */}
                 <button
                   type="button"
                   onClick={() => dispatch(logout())}
-                  className="ml-2 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all duration-150 shadow-xs cursor-pointer"
-                  title="End author session"
+                  className="p-2 sm:px-3 sm:py-1.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-white border border-slate-200 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all duration-150 shadow-xs cursor-pointer shrink-0"
+                  title="Log out"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
                   <span className="font-medium hidden sm:inline">Log out</span>
@@ -277,12 +277,23 @@ export default function AppShell() {
             </div>
           </div>
 
-          {/* Mobile Secondary Nav Bar */}
-          <nav className="md:hidden flex gap-2 pb-3 overflow-x-auto border-t border-slate-100 pt-2.5">
+          {/* Mobile Secondary Nav Bar: Clean 3-column grid that fits all screens */}
+          <nav className="md:hidden grid grid-cols-3 gap-1.5 pb-2.5 pt-2 border-t border-slate-100">
             {navItems.map((item) => (
-              <NavLink key={item.to} to={item.to} end={item.end} className={linkClass}>
-                <span>{item.icon}</span>
-                <span className="whitespace-nowrap">{item.label}</span>
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `px-1.5 py-2 rounded-xl text-xs transition-all duration-150 flex items-center justify-center gap-1.5 min-w-0 ${
+                    isActive
+                      ? "bg-emerald-50 text-[#064e3b] font-bold border border-emerald-200/80 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 font-medium"
+                  }`
+                }
+              >
+                <span className="shrink-0">{item.icon}</span>
+                <span className="truncate">{item.label}</span>
               </NavLink>
             ))}
           </nav>

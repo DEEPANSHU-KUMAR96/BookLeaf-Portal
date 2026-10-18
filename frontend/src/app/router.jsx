@@ -1,12 +1,15 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AppShell from "../components/AppShell";
+import AdminShell from "../components/AdminShell";
 import Spinner from "../components/Spinner";
 import LoginPage from "../features/auth/pages/LoginPage";
 import { useAuth } from "../features/auth/hook/useAuth";
 import MyBooksPage from "../features/books/pages/MyBooksPage";
 import SubmitTicketPage from "../features/tickets/pages/SubmitTicketPage";
 import MyTicketsPage from "../features/tickets/pages/MyTicketsPage";
+import TicketQueuePage from "../features/admin/pages/TicketQueuePage";
+import TicketDetailPage from "../features/admin/pages/TicketDetailPage";
 
 /** "/" sends everyone to the right place for their role. */
 function HomeRedirect() {
@@ -16,7 +19,6 @@ function HomeRedirect() {
     return <Navigate to={user.role === "admin" ? "/admin" : "/author"} replace />;
 }
 
-// Temporary pages, replaced feature by feature in the next steps
 const Placeholder = ({ title }) => <h1 className="text-lg font-medium text-slate-800">{title}</h1>;
 
 export const router = createBrowserRouter([
@@ -34,23 +36,10 @@ export const router = createBrowserRouter([
             {
                 element: <AppShell />,
                 children: [
-                    {
-                        path: "/author",
-                        element: <Navigate to="/author/books" replace />
-                    },
-                    {
-
-                        path: "/author/books",
-                        element: <MyBooksPage />
-                    },
-                    {
-                        path: "/author/tickets/new",
-                        element: <SubmitTicketPage />
-                    },
-                    {
-                        path: "/author/tickets",
-                        element: <MyTicketsPage />
-                    },
+                    { path: "/author", element: <Navigate to="/author/books" replace /> },
+                    { path: "/author/books", element: <MyBooksPage /> },
+                    { path: "/author/tickets/new", element: <SubmitTicketPage /> },
+                    { path: "/author/tickets", element: <MyTicketsPage /> },
                 ],
             },
         ],
@@ -58,16 +47,15 @@ export const router = createBrowserRouter([
     {
         element: <ProtectedRoute role="admin" />,
         children: [{
-            element: <AppShell />,
-            children: [{
-                path: "/admin",
-                element: <Placeholder title="Admin dashboard" />
-            }]
+            element: <AdminShell />,
+            children: [
+                { path: "/admin", element: <TicketQueuePage /> },
+                { path: "/admin/tickets/:id", element: <TicketDetailPage /> },
+            ]
         }],
     },
     {
         path: "*",
-        element: <Navigate to="/"
-            replace />
+        element: <Navigate to="/" replace />
     },
 ]);

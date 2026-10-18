@@ -5,10 +5,11 @@ import { apiBaseURL, getAccessToken, refreshAccessToken } from "../../../service
 import { sessionExpired } from "../../auth/state/authSlice";
 import { useAuth } from "../../auth/hook/useAuth";
 import { loadTickets, refreshTicket } from "../../tickets/state/ticketsSlice";
+import { syncDetail, syncQueue } from "../../admin/state/adminSlice";
 
 // Retriable = try again after a short delay. Fatal = give up (the user would need to log in again).
-class RetriableError extends Error { }
-class FatalError extends Error { }
+class RetriableError extends Error {}
+class FatalError extends Error {}
 
 /**
  * Keeps one SSE connection open while the user is logged in and turns server events
@@ -16,63 +17,87 @@ class FatalError extends Error { }
  * so permissions are always enforced by the backend.
  */
 export function useRealtime() {
-    const dispatch = useDispatch();
-    const { user } = useAuth();
-    const role = user?.role;
-    const userId = user?.id;
+  const dispatch = useDispatch();
+  const { user } = useAuth();
+  const role = user?.role;
+  const userId = user?.id;
 
-    useEffect(() => {
-        if (role !== "author") return; // the admin stream is wired up with the admin portal
-        const ctrl = new AbortController();
+  useEffect(() => {
+    if (!role) return;
+    const ctrl = new AbortController();
 
-        fetchEventSource(`${apiBaseURL}/events`, {
-            signal: ctrl.signal,
-            openWhenHidden: true, // keep receiving updates while the tab is in the background
+    // Admin events come in bursts (created, then AI classified). Merge them into one refetch.
+    const pendingIds = new Set();
+    let timer = null;
+    const flushAdmin = () => {
+      timer = null;
+      const ids = [...pendingIds];
+      pendingIds.clear();
+      dispatch(syncQueue());
+      dispatch(syncDetail(ids));
+    };
+    const scheduleAdminRefresh = (ticketId) => {
+      pendingIds.add(ticketId);
+      if (!timer) timer = setTimeout(flushAdmin, 300);
+    };
 
-            // Read the token on every (re)connect. It is replaced every ~15 minutes.
-            fetch: (input, init) =>
-                window.fetch(input, { ...init, headers: { ...init.headers, Authorization: `Bearer ${getAccessToken()}` } }),
+    fetchEventSource(`${apiBaseURL}/events`, {
+      signal: ctrl.signal,
+      openWhenHidden: true, // keep receiving updates while the tab is in the background
 
-            async onopen(res) {
-                if (res.ok) return;
-                if (res.status === 401) {
-                    // Access token expired: renew it, then reconnect
-                    try {
-                        await refreshAccessToken();
-                    } catch {
-                        dispatch(sessionExpired());
-                        throw new FatalError("Session expired");
-                    }
-                    throw new RetriableError();
-                }
-                if (res.status === 429 || res.status >= 500) throw new RetriableError();
-                throw new FatalError(`Stream failed (${res.status})`);
-            },
+      // Read the token on every (re)connect. It is replaced every ~15 minutes.
+      fetch: (input, init) =>
+        window.fetch(input, { ...init, headers: { ...init.headers, Authorization: `Bearer ${getAccessToken()}` } }),
 
-            onmessage(msg) {
-                const data = msg.data ? JSON.parse(msg.data) : {};
-                switch (msg.event) {
-                    case "connected":
-                        // Fires on every (re)connect: resync, because events sent while offline were missed
-                        dispatch(loadTickets());
-                        break;
-                    case "ticket.response":
-                    case "ticket.updated":
-                        dispatch(refreshTicket(data.ticketId));
-                        break;
-                }
-            },
+      async onopen(res) {
+        if (res.ok) return;
+        if (res.status === 401) {
+          try {
+            await refreshAccessToken();
+          } catch {
+            dispatch(sessionExpired());
+            throw new FatalError("Session expired");
+          }
+          throw new RetriableError();
+        }
+        if (res.status === 429 || res.status >= 500) throw new RetriableError();
+        throw new FatalError(`Stream failed (${res.status})`);
+      },
 
-            // The server closes the stream when the token expires. Throwing here makes the library reconnect.
-            onclose() {
-                throw new RetriableError();
-            },
-            onerror(err) {
-                if (err instanceof FatalError) throw err; // stop retrying
-                return 3000; // retry after 3 seconds
-            },
-        }).catch(() => { }); // fatal errors end here: the stream simply stays closed
+      onmessage(msg) {
+        const data = msg.data ? JSON.parse(msg.data) : {};
 
-        return () => ctrl.abort();
-    }, [dispatch, role, userId]);
+        // Fires on every (re)connect: resync, because events sent while offline were missed
+        if (msg.event === "connected") {
+          if (role === "admin") {
+            dispatch(syncQueue());
+            dispatch(syncDetail());
+          } else {
+            dispatch(loadTickets());
+          }
+          return;
+        }
+
+        if (role === "admin") {
+          if (msg.event === "ticket.created" || msg.event === "ticket.updated") scheduleAdminRefresh(data.ticketId);
+        } else if (msg.event === "ticket.response" || msg.event === "ticket.updated") {
+          dispatch(refreshTicket(data.ticketId));
+        }
+      },
+
+      // The server closes the stream when the token expires. Throwing makes the library reconnect.
+      onclose() {
+        throw new RetriableError();
+      },
+      onerror(err) {
+        if (err instanceof FatalError) throw err; // stop retrying
+        return 3000; // retry after 3 seconds
+      },
+    }).catch(() => {}); // fatal errors end here: the stream simply stays closed
+
+    return () => {
+      ctrl.abort();
+      clearTimeout(timer);
+    };
+  }, [dispatch, role, userId]);
 }

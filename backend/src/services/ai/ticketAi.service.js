@@ -75,7 +75,7 @@ export async function generateDraft(ticketId, { force = false } = {}) {
         const draft = await draftResponse({ ticket, author: ticket.author, book: ticket.book });
         await Ticket.updateOne(
             { _id: ticketId },
-            { "ai.draft": draft, "ai.draftGeneratedAt": new Date() }
+            { "ai.draft": draft, "ai.draftGeneratedAt": new Date(), "ai.status": "done", "ai.error": null }
         );
         return { draft, cached: false };
     } catch (err) {

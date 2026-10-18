@@ -32,3 +32,14 @@ export const formatDateTime = (iso) => {
         return "—";
     }
 };
+
+/** 53 -> "2d 5h", 5 -> "5h", 0 -> "<1h" */
+export function formatAge(hours) {
+    if (hours < 1) return "<1h";
+
+    if (hours < 24) return `${hours}h`;
+
+    const d = Math.floor(hours / 24);
+    const h = hours % 24;
+    return h ? `${d}d ${h}h` : `${d}d`;
+}

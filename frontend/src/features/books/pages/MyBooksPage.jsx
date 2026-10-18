@@ -221,34 +221,36 @@ export default function MyBooksPage() {
 
             {/* Author Support Banner */}
             <section
-                className="mt-12 bg-white rounded-2xl border border-slate-200/80 p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs"
+                className="mt-8 sm:mt-12 bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-5 sm:gap-6 shadow-xs"
                 data-purpose="support-callout"
             >
-                <div className="flex items-center gap-4 text-center sm:text-left">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-700 shrink-0">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-start sm:items-center gap-3.5 sm:gap-4 text-left">
+                    <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-700 shrink-0 mt-0.5 sm:mt-0">
+                        <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
                         </svg>
                     </div>
-                    <div>
-                        <h4 className="text-base font-semibold text-slate-900">Need guidance on marketing or distribution?</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">
+                    <div className="flex-1 min-w-0">
+                        <h4 className="text-sm sm:text-base font-semibold text-slate-900 leading-snug">
+                            Need guidance on marketing or distribution?
+                        </h4>
+                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">
                             Your dedicated publishing liaison is available Monday through Friday for author consulting.
                         </p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto shrink-0">
                     <button
                         type="button"
                         onClick={() => showToast("Opening Author FAQ & Knowledgebase guides.")}
-                        className="px-4 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer shadow-xs"
+                        className="px-3.5 sm:px-4 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer shadow-xs text-center flex items-center justify-center"
                     >
                         Author FAQ
                     </button>
                     <Link
                         to="/author/tickets/new"
-                        className="px-4 py-2.5 text-xs font-semibold text-white bg-[#064e3b] hover:bg-[#022c22] rounded-xl shadow-xs transition-colors cursor-pointer"
+                        className="px-3.5 sm:px-4 py-2.5 text-xs font-semibold text-white bg-[#064e3b] hover:bg-[#022c22] rounded-xl shadow-xs transition-colors cursor-pointer text-center flex items-center justify-center"
                     >
                         Submit Query
                     </Link>
