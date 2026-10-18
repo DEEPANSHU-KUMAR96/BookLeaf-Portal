@@ -46,6 +46,7 @@ jobs:
   frontend:
     name: frontend CI
     runs-on: ubuntu-latest
+    environment: production
 
     defaults:
       run:
