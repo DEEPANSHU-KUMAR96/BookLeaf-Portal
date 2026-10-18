@@ -16,3 +16,19 @@ export const formatDate = (iso) =>
             timeZone: "UTC"
         })
         : null;
+
+export const formatDateTime = (iso) => {
+    if (!iso) return "—";
+    try {
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return "—";
+        return d.toLocaleString("en-IN", {
+            day: "numeric",
+            month: "short",
+            hour: "numeric",
+            minute: "2-digit"
+        });
+    } catch {
+        return "—";
+    }
+};

@@ -10,9 +10,14 @@ let onAuthFailure = () => { };
 export const setAccessToken = (token) => {
     accessToken = token;
 };
+// Used by the SSE client, which cannot go through axios interceptors
+export const getAccessToken = () => accessToken;
+
 export const setAuthFailureHandler = (fn) => {
     onAuthFailure = fn;
 };
+
+export const apiBaseURL = baseURL;
 
 const api = axios.create({ baseURL, withCredentials: true });
 

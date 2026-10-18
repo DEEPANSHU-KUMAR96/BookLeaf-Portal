@@ -5,6 +5,8 @@ import Spinner from "../components/Spinner";
 import LoginPage from "../features/auth/pages/LoginPage";
 import { useAuth } from "../features/auth/hook/useAuth";
 import MyBooksPage from "../features/books/pages/MyBooksPage";
+import SubmitTicketPage from "../features/tickets/pages/SubmitTicketPage";
+import MyTicketsPage from "../features/tickets/pages/MyTicketsPage";
 
 /** "/" sends everyone to the right place for their role. */
 function HomeRedirect() {
@@ -43,11 +45,11 @@ export const router = createBrowserRouter([
                     },
                     {
                         path: "/author/tickets/new",
-                        element: <Placeholder title="Submit a query" />
+                        element: <SubmitTicketPage />
                     },
                     {
                         path: "/author/tickets",
-                        element: <Placeholder title="My tickets" />
+                        element: <MyTicketsPage />
                     },
                 ],
             },
