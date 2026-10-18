@@ -18,6 +18,7 @@ import { globalLimiter } from "./middlewares/rateLimit.js";
 
 const app = express();
 
+app.set("trust proxy", 1);
 
 // Docs are mounted BEFORE helmet: Swagger UI uses inline scripts that helmet's default CSP blocks
 app.get("/api/docs.json", (req, res) => res.json(openapi));
@@ -27,10 +28,10 @@ app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openapi, {
 
 app.use(cookieParser());
 app.use(helmet());
-app.use(cors({ 
+app.use(cors({
     origin: config.clientUrl,
-     credentials: true 
-    }));
+    credentials: true
+}));
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("dev"));
 
