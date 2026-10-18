@@ -61,7 +61,18 @@ export default function MyTicketsPage() {
                     </p>
                 </div>
             ) : (
-                items.map((t) => <TicketCard key={t.id} ticket={t} unread={unreadIds.includes(t.id)} />)
+                items.map((t) => {
+                    const tid = t.id || t._id;
+                    const isOpen = location.state?.openTicketId === tid;
+                    return (
+                        <TicketCard
+                            key={tid}
+                            ticket={t}
+                            unread={unreadIds.includes(tid)}
+                            defaultOpen={isOpen}
+                        />
+                    );
+                })
             )}
         </div>
     );

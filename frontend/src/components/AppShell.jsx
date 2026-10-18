@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { NavLink, Outlet, Link } from "react-router-dom";
+import { NavLink, Outlet, Link, useNavigate } from "react-router-dom";
 import { logout } from "../features/auth/state/authSlice";
 import { useAuth } from "../features/auth/hook/useAuth";
 import { useRealtime } from "../features/realtime/hook/useRealtime";
-import { markRead } from "../features/tickets/state/ticketsSlice";
+import { loadTickets, markRead } from "../features/tickets/state/ticketsSlice";
+import { formatDateTime, formatAge } from "../utils/format";
 
 const NAV = {
   author: [
@@ -19,7 +20,7 @@ const NAV = {
     },
     {
       to: "/author/tickets/new",
-      label: "Submit a Query",
+      label: "Submit Query",
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -51,6 +52,8 @@ const NAV = {
   ],
 };
 
+const STORAGE_KEY = "bookleaf_author_read_notifs";
+
 const linkClass = ({ isActive }) =>
   `px-3.5 py-2 rounded-lg text-sm transition-all duration-150 flex items-center gap-2 ${isActive
     ? "bg-emerald-50 text-[#064e3b] font-semibold border border-emerald-200/70 shadow-xs"
@@ -59,14 +62,110 @@ const linkClass = ({ isActive }) =>
 
 export default function AppShell() {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("all"); // "all" | "unread"
   const bellRef = useRef(null);
 
-  // Real notification data from Redux
-  const { items: tickets, unreadIds } = useSelector((s) => s.tickets);
-  const unreadTickets = tickets.filter((t) => unreadIds.includes(t.id || t._id));
-  const unreadCount = unreadIds.length;
+  // Tickets from Redux
+  const { items: tickets, unreadIds, status: ticketsStatus } = useSelector((s) => s.tickets);
+
+  // Load tickets on mount so notifications are always available
+  useEffect(() => {
+    if (ticketsStatus === "idle") {
+      dispatch(loadTickets());
+    }
+  }, [ticketsStatus, dispatch]);
+
+  // Maintain live SSE connection
+  useRealtime();
+
+  // Read notification keys stored in localStorage
+  const [readKeys, setReadKeys] = useState(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Notifications computed from tickets with editorial replies or status updates
+  const notifications = useMemo(() => {
+    return tickets.map((t) => {
+      const tid = t.id || t._id;
+      const responses = t.responses || [];
+      const hasReplies = responses.length > 0;
+      const lastReply = hasReplies ? responses[responses.length - 1] : null;
+
+      // Unique version key: if responses count or status changes, becomes unread again
+      const notifKey = `${tid}-${responses.length}-${t.status}`;
+      const isUnread = !readKeys.includes(notifKey) || unreadIds.includes(tid);
+
+      let type = "ticket";
+      let summary = "Query raised";
+      if (hasReplies) {
+        type = "reply";
+        summary = lastReply?.message
+          ? `${lastReply.message.slice(0, 90)}${lastReply.message.length > 90 ? "..." : ""}`
+          : "New reply from the editorial team";
+      } else if (t.status === "Resolved") {
+        type = "resolved";
+        summary = "Your ticket has been marked as resolved";
+      } else if (t.status === "In Progress") {
+        type = "progress";
+        summary = "Editorial team is reviewing your query";
+      }
+
+      return {
+        id: tid,
+        notifKey,
+        subject: t.subject || "Publishing Inquiry",
+        bookTitle: t.book?.title,
+        status: t.status,
+        category: t.category,
+        summary,
+        replyCount: responses.length,
+        time: lastReply?.createdAt || t.updatedAt || t.createdAt,
+        isUnread,
+        hasReplies,
+      };
+    });
+  }, [tickets, readKeys, unreadIds]);
+
+  const unreadCount = useMemo(() => {
+    return notifications.filter((n) => n.isUnread && (n.hasReplies || n.status === "Resolved")).length;
+  }, [notifications]);
+
+  const filteredNotifications = useMemo(() => {
+    if (activeTab === "unread") {
+      return notifications.filter((n) => n.isUnread);
+    }
+    return notifications;
+  }, [notifications, activeTab]);
+
+  const markAllRead = () => {
+    const allKeys = notifications.map((n) => n.notifKey);
+    setReadKeys(allKeys);
+    unreadIds.forEach((id) => dispatch(markRead(id)));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(allKeys));
+    } catch {}
+  };
+
+  const handleNotificationClick = (n) => {
+    if (!readKeys.includes(n.notifKey)) {
+      const updated = [...readKeys, n.notifKey];
+      setReadKeys(updated);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch {}
+    }
+    dispatch(markRead(n.id));
+    setNotificationOpen(false);
+    navigate("/author/tickets", { state: { openTicketId: n.id } });
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -76,12 +175,16 @@ export default function AppShell() {
         setNotificationOpen(false);
       }
     };
+    const escHandler = (e) => {
+      if (e.key === "Escape") setNotificationOpen(false);
+    };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("keydown", escHandler);
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("keydown", escHandler);
+    };
   }, [notificationOpen]);
-
-  // Maintain one live SSE connection for real-time ticket events
-  useRealtime();
 
   // Compute initials for avatar (e.g. "Priya Sharma" -> "PS")
   const initials = user?.name
@@ -135,107 +238,178 @@ export default function AppShell() {
 
             {/* Author Profile & Quick Actions */}
             <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
-              {/* Notification Bell */}
+              {/* ── Working Author Notification Bell ────────────────────── */}
               <div className="relative" ref={bellRef}>
                 <button
                   type="button"
                   onClick={() => setNotificationOpen(!notificationOpen)}
-                  className="relative p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                  title="Notifications"
-                  aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
+                  className={`relative p-2.5 rounded-xl transition-all duration-150 cursor-pointer ${
+                    notificationOpen
+                      ? "bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/30"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
+                  }`}
+                  title="Author Notifications"
+                  aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-emerald-600 text-white text-[10px] font-bold rounded-full ring-2 ring-white flex items-center justify-center px-0.5 animate-pulse">
+                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-emerald-600 text-white text-[10px] font-mono font-bold rounded-full ring-2 ring-white flex items-center justify-center px-1 animate-pulse">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
                 </button>
 
+                {/* Responsive Notification Dropdown */}
                 {notificationOpen && (
-                  <div className="fixed inset-x-3 top-18 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 bg-white rounded-2xl shadow-card border border-slate-200 z-50 overflow-hidden">
+                  <div className="fixed inset-x-3 top-18 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[380px] bg-white rounded-2xl shadow-2xl border border-slate-200/90 z-50 overflow-hidden flex flex-col max-h-[82vh] animate-in fade-in zoom-in-95 duration-150">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100">
-                      <span className="text-sm font-semibold text-slate-800">Notifications</span>
+                    <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/80 flex items-center justify-between shrink-0">
                       <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-slate-900">Notifications</span>
                         {unreadCount > 0 && (
-                          <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full font-semibold border border-emerald-200/60">
+                          <span className="text-[10px] text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full font-bold">
                             {unreadCount} new
                           </span>
                         )}
-                        {unreadCount > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => unreadIds.forEach((id) => dispatch(markRead(id)))}
-                            className="text-[10px] text-slate-400 hover:text-slate-700 transition-colors font-medium cursor-pointer"
-                          >
-                            Mark all read
-                          </button>
-                        )}
                       </div>
+                      {unreadCount > 0 && (
+                        <button
+                          type="button"
+                          onClick={markAllRead}
+                          className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 transition-colors cursor-pointer"
+                        >
+                          Mark all read
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Filter Tabs */}
+                    <div className="px-4 pt-2 pb-1.5 border-b border-slate-100 flex items-center gap-2 shrink-0 bg-white">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("all")}
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+                          activeTab === "all"
+                            ? "bg-slate-900 text-white"
+                            : "text-slate-500 hover:bg-slate-100"
+                        }`}
+                      >
+                        All ({notifications.length})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("unread")}
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                          activeTab === "unread"
+                            ? "bg-emerald-700 text-white"
+                            : "text-slate-500 hover:bg-slate-100"
+                        }`}
+                      >
+                        <span>New Replies</span>
+                        {unreadCount > 0 && (
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                            activeTab === "unread" ? "bg-white/20 text-white" : "bg-emerald-100 text-emerald-800 font-bold"
+                          }`}>
+                            {unreadCount}
+                          </span>
+                        )}
+                      </button>
                     </div>
 
                     {/* Notification List */}
-                    <div className="max-h-72 overflow-y-auto">
-                      {unreadTickets.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-10 text-slate-400">
-                          <svg className="w-8 h-8 mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                          </svg>
-                          <p className="text-xs font-medium">You're all caught up!</p>
-                          <p className="text-[10px] mt-0.5">No new replies</p>
+                    <div className="overflow-y-auto flex-1 divide-y divide-slate-100 overscroll-contain">
+                      {filteredNotifications.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                          <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-2">
+                            ✓
+                          </div>
+                          <p className="text-sm font-semibold text-slate-800">You're all caught up!</p>
+                          <p className="text-xs text-slate-400 mt-0.5">No new replies or status updates.</p>
                         </div>
                       ) : (
-                        unreadTickets.map((ticket) => {
-                          const tid = ticket.id || ticket._id;
-                          return (
-                            <Link
-                              key={tid}
-                              to={`/author/tickets/${tid}`}
-                              onClick={() => {
-                                dispatch(markRead(tid));
-                                setNotificationOpen(false);
-                              }}
-                              className="flex items-start gap-3 px-4 py-3 hover:bg-emerald-50/60 border-b border-slate-100 last:border-0 transition-colors group"
-                            >
-                              {/* Icon */}
-                              <div className="mt-0.5 shrink-0 w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center">
-                                <svg className="w-3.5 h-3.5 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-3 3v-3z" />
-                                </svg>
-                              </div>
-                              {/* Content */}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-slate-800 truncate group-hover:text-emerald-800 transition-colors">
-                                  {ticket.subject || "Ticket update"}
-                                </p>
-                                <p className="text-[10px] text-slate-500 mt-0.5">
-                                  New reply from the editorial team
-                                </p>
-                                {ticket.updatedAt && (
-                                  <p className="text-[10px] text-slate-400 mt-0.5">
-                                    {new Date(ticket.updatedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
-                                  </p>
+                        filteredNotifications.map((n) => (
+                          <div
+                            key={n.id}
+                            onClick={() => handleNotificationClick(n)}
+                            className={`p-3.5 flex items-start gap-3 hover:bg-emerald-50/50 transition-colors cursor-pointer group ${
+                              n.isUnread ? "bg-emerald-50/20" : "bg-white"
+                            }`}
+                          >
+                            {/* Icon */}
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 text-sm ${
+                              n.hasReplies
+                                ? "bg-emerald-100 text-emerald-800"
+                                : n.status === "Resolved"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-slate-100 text-slate-600"
+                            }`}>
+                              {n.hasReplies ? "💬" : n.status === "Resolved" ? "✓" : "📋"}
+                            </div>
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-1 mb-0.5">
+                                <span className="text-xs font-semibold text-slate-900 truncate group-hover:text-emerald-800 transition-colors">
+                                  {n.subject}
+                                </span>
+                                {n.time && (
+                                  <span className="text-[10px] font-mono text-slate-400 shrink-0">
+                                    {formatDateTime(n.time)}
+                                  </span>
                                 )}
                               </div>
-                              {/* Unread dot */}
-                              <span className="mt-1.5 shrink-0 w-2 h-2 rounded-full bg-emerald-500"></span>
-                            </Link>
-                          );
-                        })
+
+                              <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                                {n.summary}
+                              </p>
+
+                              <div className="flex items-center gap-2 mt-1.5 flex-wrap text-[10px]">
+                                {n.status && (
+                                  <span className={`px-1.5 py-0.5 rounded font-mono font-medium ${
+                                    n.status === "Resolved"
+                                      ? "bg-emerald-100 text-emerald-800"
+                                      : n.status === "In Progress"
+                                      ? "bg-amber-100 text-amber-800"
+                                      : "bg-slate-100 text-slate-600"
+                                  }`}>
+                                    {n.status}
+                                  </span>
+                                )}
+                                {n.replyCount > 0 && (
+                                  <span className="font-mono text-slate-400">
+                                    {n.replyCount} {n.replyCount === 1 ? "reply" : "replies"}
+                                  </span>
+                                )}
+                                {n.bookTitle && (
+                                  <span className="text-slate-400 italic truncate max-w-[120px]">
+                                    {n.bookTitle}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Unread indicator */}
+                            {n.isUnread && (
+                              <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0 mt-1.5 animate-pulse"></span>
+                            )}
+                          </div>
+                        ))
                       )}
                     </div>
 
                     {/* Footer */}
-                    <div className="px-4 py-2.5 border-t border-slate-100 bg-slate-50/60">
+                    <div className="p-2.5 border-t border-slate-100 bg-slate-50 flex items-center justify-between shrink-0 text-xs">
+                      <span className="text-[11px] font-mono text-slate-500">
+                        {tickets.length} total {tickets.length === 1 ? "ticket" : "tickets"}
+                      </span>
                       <Link
                         to="/author/tickets"
                         onClick={() => setNotificationOpen(false)}
-                        className="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 transition-colors"
+                        className="font-semibold text-emerald-700 hover:text-emerald-900 transition-colors"
                       >
-                        View all tickets →
+                        View all in My Tickets →
                       </Link>
                     </div>
                   </div>
@@ -261,7 +435,7 @@ export default function AppShell() {
                   </span>
                 </div>
 
-                {/* Sleek Log Out Button (icon on mobile, icon+label on sm+) */}
+                {/* Sleek Log Out Button */}
                 <button
                   type="button"
                   onClick={() => dispatch(logout())}
@@ -277,7 +451,7 @@ export default function AppShell() {
             </div>
           </div>
 
-          {/* Mobile Secondary Nav Bar: Clean 3-column grid that fits all screens */}
+          {/* Mobile Secondary Nav Bar */}
           <nav className="md:hidden grid grid-cols-3 gap-1.5 pb-2.5 pt-2 border-t border-slate-100">
             {navItems.map((item) => (
               <NavLink

@@ -17,9 +17,9 @@ function Bubble({ from, name, time, children }) {
     );
 }
 
-export default function TicketCard({ ticket, unread }) {
+export default function TicketCard({ ticket, unread, defaultOpen }) {
     const dispatch = useDispatch();
-    const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(Boolean(defaultOpen));
 
     // Viewing the ticket clears the badge, also when a reply arrives while it is already open
     useEffect(() => {
