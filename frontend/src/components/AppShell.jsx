@@ -487,11 +487,9 @@ export default function AppShell() {
             <span>•</span>
             <span>Author Central Portal v3.4.1</span>
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-slate-500">
-            <a href="#terms" className="hover:text-slate-800 transition-colors">Royalty Terms</a>
-            <a href="#channels" className="hover:text-slate-800 transition-colors">Distribution Channels</a>
-            <a href="#privacy" className="hover:text-slate-800 transition-colors">Privacy Policy</a>
-            <a href="#support" className="hover:text-slate-800 transition-colors">Support Desk</a>
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-slate-500 font-medium">
+            <Link to="/author/royalty-terms" className="hover:text-emerald-700 transition-colors">Royalty Terms</Link>
+            <Link to="/author/privacy-policy" className="hover:text-emerald-700 transition-colors">Privacy Policy</Link>
           </div>
         </div>
       </footer>

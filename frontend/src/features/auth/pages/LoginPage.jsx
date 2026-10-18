@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useDispatch } from "react-redux";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 import { login, clearError } from "../state/authSlice";
 import { useAuth } from "../hook/useAuth";
 
@@ -526,21 +526,19 @@ export default function LoginPage() {
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2.5 text-[11px] text-stone-500">
                     <p>© 2026 BookLeaf Publishing Collective Inc. All Rights Reserved.</p>
                     <div className="flex items-center space-x-4">
-                        <button
-                            type="button"
-                            onClick={() => showHelpNotification("Privacy Charter: Author data and drafts are strictly confidential.")}
-                            className="hover:text-stone-800 transition-colors cursor-pointer"
+                        <Link
+                            to="/privacy-policy"
+                            className="hover:text-stone-800 transition-colors"
                         >
-                            Privacy Charter
-                        </button>
+                            Privacy Policy
+                        </Link>
                         <span>•</span>
-                        <button
-                            type="button"
-                            onClick={() => showHelpNotification("Manuscript Agreement: Governed by standard BookLeaf publishing terms.")}
-                            className="hover:text-stone-800 transition-colors cursor-pointer"
+                        <Link
+                            to="/royalty-terms"
+                            className="hover:text-stone-800 transition-colors"
                         >
-                            Manuscript Agreement
-                        </button>
+                            Royalty Terms
+                        </Link>
                         <span>•</span>
                         <button
                             type="button"

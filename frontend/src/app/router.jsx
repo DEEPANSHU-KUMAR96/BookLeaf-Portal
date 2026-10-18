@@ -10,6 +10,8 @@ import SubmitTicketPage from "../features/tickets/pages/SubmitTicketPage";
 import MyTicketsPage from "../features/tickets/pages/MyTicketsPage";
 import TicketQueuePage from "../features/admin/pages/TicketQueuePage";
 import TicketDetailPage from "../features/admin/pages/TicketDetailPage";
+import RoyaltyTermsPage from "../features/legal/pages/RoyaltyTermsPage";
+import PrivacyPolicyPage from "../features/legal/pages/PrivacyPolicyPage";
 
 /** "/" sends everyone to the right place for their role. */
 function HomeRedirect() {
@@ -31,6 +33,14 @@ export const router = createBrowserRouter([
         element: <LoginPage />
     },
     {
+        path: "/royalty-terms",
+        element: <RoyaltyTermsPage />
+    },
+    {
+        path: "/privacy-policy",
+        element: <PrivacyPolicyPage />
+    },
+    {
         element: <ProtectedRoute role="author" />,
         children: [
             {
@@ -40,6 +50,8 @@ export const router = createBrowserRouter([
                     { path: "/author/books", element: <MyBooksPage /> },
                     { path: "/author/tickets/new", element: <SubmitTicketPage /> },
                     { path: "/author/tickets", element: <MyTicketsPage /> },
+                    { path: "/author/royalty-terms", element: <RoyaltyTermsPage /> },
+                    { path: "/author/privacy-policy", element: <PrivacyPolicyPage /> },
                 ],
             },
         ],
