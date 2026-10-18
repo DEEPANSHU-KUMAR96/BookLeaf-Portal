@@ -48,6 +48,12 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
 
+    needs:
+      - backend
+      - frontend
+
+    if: github.ref == 'refs/heads/main'
+
     defaults:
       run:
         working-directory: frontend
